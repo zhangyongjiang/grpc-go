@@ -1,0 +1,12 @@
+http://www.grpc.io/docs/tutorials/basic/go.html
+https://github.com/grpc-ecosystem/grpc-gateway
+
+protoc -I/usr/local/include -I. -I$GOPATH/src -I$GOPATH/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis --go_out=plugins=grpc:. blockchain/block_chain.proto 
+
+protoc -I/usr/local/include -I. -I$GOPATH/src -I$GOPATH/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis --grpc-gateway_out=logtostderr=true:. blockchain/block_chain.proto 
+
+go run client/client.go &
+go run server/gateway.go &
+go run server/server.go &
+
+curl -X POST http://localhost:8080/chain-info -v -d '{}'
