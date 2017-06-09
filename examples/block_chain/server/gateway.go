@@ -9,7 +9,7 @@ import (
   "github.com/grpc-ecosystem/grpc-gateway/runtime"
   "google.golang.org/grpc"
 	
-  gw "google.golang.org/grpc/examples/block_chaine/blockchain"
+  gw "google.golang.org/grpc/examples/block_chain/blockchain"
 )
 
 var (
@@ -23,7 +23,7 @@ func run() error {
 
   mux := runtime.NewServeMux()
   opts := []grpc.DialOption{grpc.WithInsecure()}
-  err := gw.RegisterRouteGuideHandlerFromEndpoint(ctx, mux, *echoEndpoint, opts)
+  err := gw.RegisterBlockChainHandlerFromEndpoint(ctx, mux, *echoEndpoint, opts)
   if err != nil {
     return err
   }

@@ -4,19 +4,13 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"io/ioutil"
-	"math"
 	"net"
-	"time"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/grpclog"
-
-	"github.com/golang/protobuf/proto"
 
 	pb "google.golang.org/grpc/examples/block_chain/blockchain"
 )

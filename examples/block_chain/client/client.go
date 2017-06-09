@@ -2,13 +2,9 @@ package main
 
 import (
 	"flag"
-	"io"
-	"math/rand"
-	"time"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	pb "google.golang.org/grpc/examples/block_chain/blockchain"
 	"google.golang.org/grpc/grpclog"
 )
