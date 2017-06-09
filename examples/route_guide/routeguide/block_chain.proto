@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "io.grpc.examples.blockchain";
+option java_outer_classname = "BlockChainProto";
+
+package blockchain;
+
+import "google/api/annotations.proto";
+
+service BlockChain {
+  rpc GetChaininfo(EmptyMsg) returns (Chaininfo) {
+    option (google.api.http) = {
+      post: "/chain-info"
+      body: "*"
+    };
+  }
+}
+
+message Chaininfo {
+  string name = 1;
+  int32 height = 2;
+}
+
+message EmptyMsg {}
+
