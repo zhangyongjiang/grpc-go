@@ -38,7 +38,7 @@ import (
 var (
 	tls                = flag.Bool("tls", false, "Connection uses TLS if true, else plain TCP")
 	caFile             = flag.String("ca_file", "testdata/ca.pem", "The file containning the CA root cert file")
-	serverAddr         = flag.String("server_addr", "127.0.0.1:10000", "The server address in the format of host:port")
+	serverAddr         = flag.String("server_addr", "127.0.0.1:9090", "The server address in the format of host:port")
 	serverHostOverride = flag.String("server_host_override", "x.test.youtube.com", "The server name use to verify the hostname returned by TLS handshake")
 )
 
@@ -50,6 +50,16 @@ func printFeature(client pb.RouteGuideClient, point *pb.Point) {
 		grpclog.Fatalf("%v.GetFeatures(_) = _, %v: ", client, err)
 	}
 	grpclog.Println(feature)
+}
+
+// printChaininfo gets the chaininfo.
+func printChaininfo(client pb.RouteGuideClient, em *pb.EmptyMsg) {
+	grpclog.Printf("Getting chaininfo")
+	chaininfo, err := client.GetChaininfo(context.Background(), em)
+	if err != nil {
+		grpclog.Fatalf("%v.GetFeatures(_) = _, %v: ", client, err)
+	}
+	grpclog.Println(chaininfo)
 }
 
 // printFeatures lists all the features within the given bounding Rectangle.
@@ -172,6 +182,7 @@ func main() {
 
 	// Looking for a valid feature
 	printFeature(client, &pb.Point{Latitude: 409146138, Longitude: -746188906})
+	printChaininfo(client, &pb.EmptyMsg{})
 
 	// Feature missing.
 	printFeature(client, &pb.Point{Latitude: 0, Longitude: 0})

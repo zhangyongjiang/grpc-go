@@ -48,12 +48,14 @@ var (
 	certFile   = flag.String("cert_file", "testdata/server1.pem", "The TLS cert file")
 	keyFile    = flag.String("key_file", "testdata/server1.key", "The TLS key file")
 	jsonDBFile = flag.String("json_db_file", "testdata/route_guide_db.json", "A json file containing a list of features")
-	port       = flag.Int("port", 10000, "The server port")
+	port       = flag.Int("port", 9090, "The server port")
+	chainFile  = flag.String("chain_info_file", "testdata/chaininfo.json", "A json file containing bc info")
 )
 
 type routeGuideServer struct {
 	savedFeatures []*pb.Feature
 	routeNotes    map[string][]*pb.RouteNote
+	savedChaininfo *pb.Chaininfo
 }
 
 // GetFeature returns the feature at the given point.
@@ -65,6 +67,11 @@ func (s *routeGuideServer) GetFeature(ctx context.Context, point *pb.Point) (*pb
 	}
 	// No feature was found, return an unnamed feature
 	return &pb.Feature{Location: point}, nil
+}
+
+// GetChaininfo returns the chaininfo.
+func (s *routeGuideServer) GetChaininfo(ctx context.Context, em *pb.EmptyMsg) (*pb.Chaininfo, error) {
+	return s.savedChaininfo, nil
 }
 
 // ListFeatures lists all features contained within the given bounding Rectangle.
@@ -151,6 +158,17 @@ func (s *routeGuideServer) loadFeatures(filePath string) {
 	}
 }
 
+// loadChaininfo loads chain from a JSON file.
+func (s *routeGuideServer) loadChaininfo(filePath string) {
+	file, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		grpclog.Fatalf("Failed to load default chaininfo: %v", err)
+	}
+	if err := json.Unmarshal(file, &s.savedChaininfo); err != nil {
+		grpclog.Fatalf("Failed to load default chaininfo: %v", err)
+	}
+}
+
 func toRadians(num float64) float64 {
 	return num * math.Pi / float64(180)
 }
@@ -200,6 +218,7 @@ func serialize(point *pb.Point) string {
 func newServer() *routeGuideServer {
 	s := new(routeGuideServer)
 	s.loadFeatures(*jsonDBFile)
+	s.loadChaininfo(*chainFile)
 	s.routeNotes = make(map[string][]*pb.RouteNote)
 	return s
 }

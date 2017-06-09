@@ -33,3 +33,7 @@ and
 ```sh
 $ go run client/client.go -tls=true
 ```
+
+
+CURL cmd:
+curl -X POST http://localhost:8080/chain-info -v -d '{}'

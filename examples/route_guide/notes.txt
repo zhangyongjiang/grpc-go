@@ -1,0 +1,14 @@
+http://www.grpc.io/docs/tutorials/basic/go.html
+https://github.com/grpc-ecosystem/grpc-gateway
+
+  806  protoc -I/usr/local/include -I. -I$GOPATH/src -I$GOPATH/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis   --go_out=plugins=grpc:. routeguide/route_guide.proto 
+  807  protoc -I/usr/local/include -I.   -I$GOPATH/src   -I$GOPATH/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis   --grpc-gateway_out=logtostderr=true:. routeguide/route_guide.proto 
+  808  vi routeguide/route_guide.proto 
+  809  protoc -I/usr/local/include -I.   -I$GOPATH/src   -I$GOPATH/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis   --grpc-gateway_out=logtostderr=true:. routeguide/route_guide.proto 
+  810  protoc -I/usr/local/include -I.   -I$GOPATH/src   -I$GOPATH/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis   --grpc-gateway_out=logtostderr=true:. routeguide/route_guide.proto 
+  811  protoc -I/usr/local/include -I. -I$GOPATH/src -I$GOPATH/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis   --go_out=plugins=grpc:. routeguide/route_guide.proto 
+  812  protoc -I/usr/local/include -I.   -I$GOPATH/src   -I$GOPATH/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis   --grpc-gateway_out=logtostderr=true:. routeguide/route_guide.proto 
+  861  go run server/server.go &
+  861  go run client/client.go &
+  862  go run server/gateway.go &
+  866  curl -X POST http://localhost:8080/chain-info -v -d '{}'
