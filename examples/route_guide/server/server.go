@@ -37,14 +37,16 @@ import (
 
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/grpclog"
+	"google.golang.org/grpc/peer"
 
 	"github.com/golang/protobuf/proto"
 
 	pb "google.golang.org/grpc/examples/route_guide/routeguide"
+	"crypto/x509"
 )
 
 var (
-	tls        = flag.Bool("tls", false, "Connection uses TLS if true, else plain TCP")
+	tls        = flag.Bool("tls", true, "Connection uses TLS if true, else plain TCP")
 	certFile   = flag.String("cert_file", "testdata/server1.pem", "The TLS cert file")
 	keyFile    = flag.String("key_file", "testdata/server1.key", "The TLS key file")
 	jsonDBFile = flag.String("json_db_file", "testdata/route_guide_db.json", "A json file containing a list of features")
@@ -71,6 +73,24 @@ func (s *routeGuideServer) GetFeature(ctx context.Context, point *pb.Point) (*pb
 
 // GetChaininfo returns the chaininfo.
 func (s *routeGuideServer) GetChaininfo(ctx context.Context, em *pb.EmptyMsg) (*pb.Chaininfo, error) {
+	peer, ok := peer.FromContext(ctx)
+	if ok {
+		tlsInfo := peer.AuthInfo.(credentials.TLSInfo)
+		fmt.Println(tlsInfo)
+
+		//v := tlsInfo.State.VerifiedChains[0][0].Subject.CommonName
+		//fmt.Printf("%v - %v\n", peer.Addr.String(), v)
+
+		v := tlsInfo.State.VerifiedChains
+		fmt.Println(v)
+
+		
+		for _, v := range tlsInfo.State.PeerCertificates {
+			fmt.Println("Client: Server public key is:")
+			fmt.Println(x509.MarshalPKIXPublicKey(v.PublicKey))
+		}
+	}
+
 	return s.savedChaininfo, nil
 }
 
@@ -221,6 +241,41 @@ func newServer() *routeGuideServer {
 	s.loadChaininfo(*chainFile)
 	s.routeNotes = make(map[string][]*pb.RouteNote)
 	return s
+}
+
+func timestamp(ctx context.Context) context.Context  {
+	now := time.Now().UnixNano()
+	newCtx := context.WithValue(ctx, "TIMESTAMP", now)
+	return newCtx
+}
+
+func TimestampInterceptor(
+	ctx context.Context,
+	req interface{},
+	info *grpc.UnaryServerInfo,
+	handler grpc.UnaryHandler,
+) (interface{}, error) {
+
+	peer, ok := peer.FromContext(ctx)
+	if ok {
+		tlsInfo := peer.AuthInfo.(credentials.TLSInfo)
+		v := tlsInfo.State.VerifiedChains[0][0].Subject.CommonName
+		fmt.Printf("%v - %v\n", peer.Addr.String(), v)
+	}
+
+	return handler(ctx, req)
+}
+
+type custom struct {
+	credentials.TransportCredentials
+}
+
+func (c *custom) ServerHandshake(conn net.Conn) (net.Conn, credentials.AuthInfo, error) {
+	conn, authInfo, err := c.TransportCredentials.ServerHandshake(conn)
+	tlsInfo := authInfo.(credentials.TLSInfo)
+	name := tlsInfo.State.PeerCertificates[0].Subject.CommonName
+	fmt.Printf("%s\n", name)
+	return conn, authInfo, err
 }
 
 func main() {

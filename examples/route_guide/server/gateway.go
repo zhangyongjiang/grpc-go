@@ -21,14 +21,40 @@ func run() error {
   ctx, cancel := context.WithCancel(ctx)
   defer cancel()
 
+
+
+  var opts []grpc.DialOption
+  if *tls {
+    var sn string
+    if *serverHostOverride != "" {
+      sn = *serverHostOverride
+    }
+    var creds credentials.TransportCredentials
+    if *caFile != "" {
+      var err error
+      creds, err = credentials.NewClientTLSFromFile(*caFile, sn)
+      if err != nil {
+        grpclog.Fatalf("Failed to create TLS credentials %v", err)
+      }
+    } else {
+      creds = credentials.NewClientTLSFromCert(nil, sn)
+    }
+    opts = append(opts, grpc.WithTransportCredentials(creds))
+  } else {
+    opts = append(opts, grpc.WithInsecure())
+  }
+
+
   mux := runtime.NewServeMux()
-  opts := []grpc.DialOption{grpc.WithInsecure()}
+  //opts := []grpc.DialOption{grpc.WithInsecure()}
+  opts := []grpc.DialOption{grpc.With}
   err := gw.RegisterRouteGuideHandlerFromEndpoint(ctx, mux, *echoEndpoint, opts)
   if err != nil {
     return err
   }
 
-  return http.ListenAndServe(":8080", mux)
+  //return http.ListenAndServe(":8080", mux)
+  return http.ListenAndServeTLS(":8443", "testdata/server1.pem","testdata/server1.key",mux)
 }
 
 func main() {
