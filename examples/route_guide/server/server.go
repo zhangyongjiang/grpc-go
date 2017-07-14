@@ -79,11 +79,9 @@ func (s *routeGuideServer) GetChaininfo(ctx context.Context, em *pb.EmptyMsg) (*
 		tlsInfo := peer.AuthInfo.(credentials.TLSInfo)
 		fmt.Println(tlsInfo)
 
-		//v := tlsInfo.State.VerifiedChains[0][0].Subject.CommonName
-		//fmt.Printf("%v - %v\n", peer.Addr.String(), v)
-
-		v := tlsInfo.State
+		v := tlsInfo.State.VerifiedChains[0][0].Subject.CommonName
 		fmt.Println(v)
+		fmt.Printf("%v - %v\n", peer.Addr.String(), v)
 
 		//v := tlsInfo.State.VerifiedChains
 		//fmt.Println(v)
