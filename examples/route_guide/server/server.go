@@ -43,6 +43,7 @@ import (
 
 	pb "google.golang.org/grpc/examples/route_guide/routeguide"
 	"crypto/x509"
+	ctls "crypto/tls"
 )
 
 var (
@@ -81,13 +82,17 @@ func (s *routeGuideServer) GetChaininfo(ctx context.Context, em *pb.EmptyMsg) (*
 		//v := tlsInfo.State.VerifiedChains[0][0].Subject.CommonName
 		//fmt.Printf("%v - %v\n", peer.Addr.String(), v)
 
-		v := tlsInfo.State.VerifiedChains
+		v := tlsInfo.State
 		fmt.Println(v)
 
-		
+		//v := tlsInfo.State.VerifiedChains
+		//fmt.Println(v)
+
+
 		for _, v := range tlsInfo.State.PeerCertificates {
-			fmt.Println("Client: Server public key is:")
+			fmt.Println("Client public key is:")
 			fmt.Println(x509.MarshalPKIXPublicKey(v.PublicKey))
+			fmt.Println(v.EmailAddresses)
 		}
 	}
 
@@ -243,41 +248,6 @@ func newServer() *routeGuideServer {
 	return s
 }
 
-func timestamp(ctx context.Context) context.Context  {
-	now := time.Now().UnixNano()
-	newCtx := context.WithValue(ctx, "TIMESTAMP", now)
-	return newCtx
-}
-
-func TimestampInterceptor(
-	ctx context.Context,
-	req interface{},
-	info *grpc.UnaryServerInfo,
-	handler grpc.UnaryHandler,
-) (interface{}, error) {
-
-	peer, ok := peer.FromContext(ctx)
-	if ok {
-		tlsInfo := peer.AuthInfo.(credentials.TLSInfo)
-		v := tlsInfo.State.VerifiedChains[0][0].Subject.CommonName
-		fmt.Printf("%v - %v\n", peer.Addr.String(), v)
-	}
-
-	return handler(ctx, req)
-}
-
-type custom struct {
-	credentials.TransportCredentials
-}
-
-func (c *custom) ServerHandshake(conn net.Conn) (net.Conn, credentials.AuthInfo, error) {
-	conn, authInfo, err := c.TransportCredentials.ServerHandshake(conn)
-	tlsInfo := authInfo.(credentials.TLSInfo)
-	name := tlsInfo.State.PeerCertificates[0].Subject.CommonName
-	fmt.Printf("%s\n", name)
-	return conn, authInfo, err
-}
-
 func main() {
 	flag.Parse()
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
@@ -286,11 +256,34 @@ func main() {
 	}
 	var opts []grpc.ServerOption
 	if *tls {
-		creds, err := credentials.NewServerTLSFromFile(*certFile, *keyFile)
+
+		certificate, _ := ctls.LoadX509KeyPair("certs/server.pem", "certs/server.key")
+
+		certPool := x509.NewCertPool()
+		ca, err := ioutil.ReadFile("certs/ca.pem")
 		if err != nil {
-			grpclog.Fatalf("Failed to generate credentials %v", err)
+			fmt.Printf("could not read ca certificate: %s", err)
+			return
 		}
-		opts = []grpc.ServerOption{grpc.Creds(creds)}
+		// Append the certificates from the CA
+		if ok := certPool.AppendCertsFromPEM(ca); !ok {
+			fmt.Printf("failed to append ca certs")
+			return
+		}
+		ta := credentials.NewTLS(&ctls.Config{
+			Certificates: []ctls.Certificate{certificate},
+			ClientCAs:    certPool,
+			ClientAuth:   ctls.RequireAndVerifyClientCert,
+		})
+		opts = []grpc.ServerOption{grpc.Creds(ta)}
+
+
+
+		//creds, err := credentials.NewServerTLSFromFile(*certFile, *keyFile)
+		//if err != nil {
+		//	grpclog.Fatalf("Failed to generate credentials %v", err)
+		//}
+		//opts = []grpc.ServerOption{grpc.Creds(creds)}
 	}
 	grpcServer := grpc.NewServer(opts...)
 	pb.RegisterRouteGuideServer(grpcServer, newServer())
