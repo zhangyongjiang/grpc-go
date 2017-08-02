@@ -37,6 +37,8 @@ import (
 	"crypto/x509"
 	"io/ioutil"
 	ct "crypto/tls"
+	"crypto/rsa"
+	"reflect"
 )
 
 var (
@@ -170,6 +172,11 @@ func main() {
 			fmt.Printf("could not load client key pair: %s", err)
 			return
 		}
+
+		privateKey := reflect.ValueOf(certificate.PrivateKey).Interface().(*rsa.PrivateKey)
+		pubKey := privateKey.PublicKey
+		fmt.Printf("public key: %s", pubKey)
+
 		if len(certificate.Certificate) != 2 {
 			fmt.Printf("client.crt should have 2 concatenated certificates: client + CA")
 		}
