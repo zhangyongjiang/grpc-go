@@ -102,6 +102,7 @@ message RouteNote {
 message Chaininfo {
   string name = 1;
   int32 height = 2;
+  string signature = 3;
 }
 message EmptyMsg {}
 

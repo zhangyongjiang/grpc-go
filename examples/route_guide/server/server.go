@@ -42,8 +42,11 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	pb "github.com/zhangyongjiang/grpc-go/examples/route_guide/routeguide"
+	"github.com/zhangyongjiang/grpc-go/examples/route_guide/utils"
 	"crypto/x509"
 	ctls "crypto/tls"
+	"crypto/rsa"
+	"reflect"
 )
 
 var (
@@ -92,6 +95,16 @@ func (s *routeGuideServer) GetChaininfo(ctx context.Context, em *pb.EmptyMsg) (*
 			fmt.Println(x509.MarshalPKIXPublicKey(v.PublicKey))
 			fmt.Println(v.EmailAddresses)
 		}
+	}
+
+	s.savedChaininfo.Signature = ""
+	var err error
+	s.savedChaininfo.Signature, err = utils.SignMessage(s.savedChaininfo, srvSecret)
+	if err != nil {
+		fmt.Println("server side sig error ")
+		fmt.Println(err)
+	} else {
+		fmt.Println("server side sig : " + s.savedChaininfo.Signature)
 	}
 
 	return s.savedChaininfo, nil
@@ -246,6 +259,7 @@ func newServer() *routeGuideServer {
 	return s
 }
 
+var srvSecret *rsa.PrivateKey
 func main() {
 	flag.Parse()
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
@@ -256,6 +270,7 @@ func main() {
 	if *tls {
 
 		certificate, _ := ctls.LoadX509KeyPair("certs/server.pem", "certs/server.key")
+		srvSecret = reflect.ValueOf(certificate.PrivateKey).Interface().(*rsa.PrivateKey)
 
 		certPool := x509.NewCertPool()
 		ca, err := ioutil.ReadFile("certs/ca.pem")

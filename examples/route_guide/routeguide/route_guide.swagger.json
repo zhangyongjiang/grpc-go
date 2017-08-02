@@ -52,6 +52,9 @@
         "height": {
           "type": "integer",
           "format": "int32"
+        },
+        "signature": {
+          "type": "string"
         }
       }
     },

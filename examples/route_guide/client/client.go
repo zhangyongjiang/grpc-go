@@ -39,6 +39,7 @@ import (
 	ct "crypto/tls"
 	"crypto/rsa"
 	"reflect"
+	"github.com/zhangyongjiang/grpc-go/examples/route_guide/utils"
 )
 
 var (
@@ -65,6 +66,20 @@ func printChaininfo(client pb.RouteGuideClient, em *pb.EmptyMsg) {
 	if err != nil {
 		grpclog.Fatalf("%v.GetFeatures(_) = _, %v: ", client, err)
 	}
+
+
+	certificate, _ := ct.LoadX509KeyPair("certs/server.pem", "certs/server.key")
+	srvSecret := reflect.ValueOf(certificate.PrivateKey).Interface().(*rsa.PrivateKey)
+	signature := chaininfo.Signature
+	chaininfo.Signature = ""
+	err = utils.VerifyMessage(chaininfo, signature, &srvSecret.PublicKey)
+	if err != nil {
+		fmt.Println("=============== signature vefification failed =========== ")
+		fmt.Println(err)
+	} else {
+		fmt.Println("=============== signature vefification succeed =========== ")
+	}
+
 	grpclog.Println(chaininfo)
 }
 
@@ -221,9 +236,11 @@ func main() {
 	defer conn.Close()
 	client := pb.NewRouteGuideClient(conn)
 
+	printChaininfo(client, &pb.EmptyMsg{})
+
+	return
 	// Looking for a valid feature
 	printFeature(client, &pb.Point{Latitude: 409146138, Longitude: -746188906})
-	printChaininfo(client, &pb.EmptyMsg{})
 
 	// Feature missing.
 	printFeature(client, &pb.Point{Latitude: 0, Longitude: 0})
