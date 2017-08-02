@@ -31,7 +31,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	pb "google.golang.org/grpc/examples/route_guide/routeguide"
+	pb "github.com/zhangyongjiang/grpc-go/examples/route_guide/routeguide"
 	"google.golang.org/grpc/grpclog"
 	"fmt"
 	"crypto/x509"
