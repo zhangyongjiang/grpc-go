@@ -2,17 +2,9 @@ package utils
 
 
 import (
-	"encoding/base64"
-	"crypto/sha256"
-	"github.com/golang/protobuf/proto"
-	"crypto"
 	"crypto/rsa"
 	"crypto/rand"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/grpclog"
-	"google.golang.org/grpc/peer"
 	"crypto/x509"
-	"crypto/tls"
 	"math/big"
 	"crypto/x509/pkix"
 	"time"
@@ -149,7 +141,7 @@ func CertTemplate() (*x509.Certificate, error) {
 
 func CreateKeyPair() {
 	// generate a new key-pair
-	rootKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	_, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		log.Fatalf("generating random key: %v", err)
 	}

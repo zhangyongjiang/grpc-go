@@ -47,7 +47,6 @@ import (
 	ctls "crypto/tls"
 	"crypto/rsa"
 	"reflect"
-	"crypto/rand"
 	"encoding/pem"
 )
 
@@ -263,6 +262,7 @@ func newServer() *routeGuideServer {
 
 var srvSecret *rsa.PrivateKey
 func main() {
+	fmt.Println("hi")
 	flag.Parse()
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 	if err != nil {
@@ -278,7 +278,7 @@ func main() {
 	grpcServer.Serve(lis)
 }
 
-func getTlsConfig() *ctls.Config {
+func getTlsConfig1() *ctls.Config {
 	certs := utils.Certs{}
 	certs.Init()
 
@@ -298,7 +298,7 @@ func getTlsConfig() *ctls.Config {
 	}
 }
 
-func getTlsConfig1() *ctls.Config {
+func getTlsConfig() *ctls.Config {
 	certificate, _ := ctls.LoadX509KeyPair("certs/server.pem", "certs/server.key")
 	srvSecret = reflect.ValueOf(certificate.PrivateKey).Interface().(*rsa.PrivateKey)
 
