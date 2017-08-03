@@ -47,6 +47,8 @@ import (
 	ctls "crypto/tls"
 	"crypto/rsa"
 	"reflect"
+	"crypto/rand"
+	"encoding/pem"
 )
 
 var (
@@ -268,37 +270,52 @@ func main() {
 	}
 	var opts []grpc.ServerOption
 	if *tls {
-
-		certificate, _ := ctls.LoadX509KeyPair("certs/server.pem", "certs/server.key")
-		srvSecret = reflect.ValueOf(certificate.PrivateKey).Interface().(*rsa.PrivateKey)
-
-		certPool := x509.NewCertPool()
-		ca, err := ioutil.ReadFile("certs/ca.pem")
-		if err != nil {
-			fmt.Printf("could not read ca certificate: %s", err)
-			return
-		}
-		// Append the certificates from the CA
-		if ok := certPool.AppendCertsFromPEM(ca); !ok {
-			fmt.Printf("failed to append ca certs")
-			return
-		}
-		ta := credentials.NewTLS(&ctls.Config{
-			Certificates: []ctls.Certificate{certificate},
-			ClientCAs:    certPool,
-			ClientAuth:   ctls.RequireAndVerifyClientCert,
-		})
+		ta := credentials.NewTLS(getTlsConfig())
 		opts = []grpc.ServerOption{grpc.Creds(ta)}
-
-
-
-		//creds, err := credentials.NewServerTLSFromFile(*certFile, *keyFile)
-		//if err != nil {
-		//	grpclog.Fatalf("Failed to generate credentials %v", err)
-		//}
-		//opts = []grpc.ServerOption{grpc.Creds(creds)}
 	}
 	grpcServer := grpc.NewServer(opts...)
 	pb.RegisterRouteGuideServer(grpcServer, newServer())
 	grpcServer.Serve(lis)
+}
+
+func getTlsConfig() *ctls.Config {
+	certs := utils.Certs{}
+	certs.Init()
+
+	_, rootCertPEM, _ := certs.GetServerCertificate()
+	rootKeyPEM := pem.EncodeToMemory(&pem.Block{
+		Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(certs.ServerPrivateKey),
+	})
+	rootTLSCert, _ := ctls.X509KeyPair(rootCertPEM, rootKeyPEM)
+
+	certPool := x509.NewCertPool()
+	certPool.AppendCertsFromPEM(rootCertPEM)
+
+	return &ctls.Config{
+		Certificates: []ctls.Certificate{rootTLSCert},
+		ClientCAs:    certPool,
+		ClientAuth:   ctls.RequireAndVerifyClientCert,
+	}
+}
+
+func getTlsConfig1() *ctls.Config {
+	certificate, _ := ctls.LoadX509KeyPair("certs/server.pem", "certs/server.key")
+	srvSecret = reflect.ValueOf(certificate.PrivateKey).Interface().(*rsa.PrivateKey)
+
+	certPool := x509.NewCertPool()
+	ca, err := ioutil.ReadFile("certs/ca.pem")
+	if err != nil {
+		fmt.Printf("could not read ca certificate: %s", err)
+		return nil
+	}
+	// Append the certificates from the CA
+	if ok := certPool.AppendCertsFromPEM(ca); !ok {
+		fmt.Printf("failed to append ca certs")
+		return nil
+	}
+	return &ctls.Config{
+		Certificates: []ctls.Certificate{certificate},
+		ClientCAs:    certPool,
+		ClientAuth:   ctls.RequireAndVerifyClientCert,
+	}
 }
